@@ -12,6 +12,7 @@ pandas = "1.5.3"
 pyarrow = "^13.0.0"
 fastparquet = "^2023.8.0"
 matplotlib = "^3.8.0"
+plotly = "^5.18.0"
 
 
 [build-system]
