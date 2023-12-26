@@ -15,3 +15,4 @@ if not os.path.exists(VALIDATED_PATH):
     
 if not os.path.exists(TRANSFORMED_PATH):
     os.mkdir(TRANSFORMED_PATH)
+    

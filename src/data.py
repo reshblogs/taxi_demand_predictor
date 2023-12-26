@@ -13,7 +13,7 @@ from src.paths import *
 url = 'https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page'
 
 
-##### Data Collection
+##### Download raw data
 
 def download_files_raw(year):
     
@@ -34,18 +34,24 @@ def download_files_raw(year):
             with open(file_name,'wb') as f:
                 files.append(file_name)
                 f.write(resp_file.content)
-        return files
+
+        print("Downloaded files : ",files)
+        
     else :
         return "Website not found"
     
 
     
-##### Data Validation
+##### Validate the raw data
 
-def validate_data_files(raw_files):
+def validate_data_files():
     validated_files = []
+    raw_files = [f for f in os.listdir(RAW_PATH) if 'parquet' in f]
+    raw_files.sort()
+    
+    all_df = []
     for f in raw_files :
-        print("### Original file = ",f)
+        #print("### Original file = ",f)
         f_path = RAW_PATH + '/' + f
         f_y_m = f.split('_')[1].split('.')[0].split('-')
         f_y_m = [int(val) for val in f_y_m]
@@ -62,6 +68,7 @@ def validate_data_files(raw_files):
         df = df[df['pickup_month'] == f_y_m[1]]
 
         df = df[['pickup_time','pickup_location']]
+        all_df.append(df)
         #print("Validated Data : ",df.shape)
         
         #display(df['pickup_time'].describe(datetime_is_numeric=True))
@@ -72,12 +79,13 @@ def validate_data_files(raw_files):
     #Delete raw files
     for f in raw_files:
         os.remove(RAW_PATH + '/' + f)
-    
-    return validated_files
+
+    all_df = pd.concat(all_df)
+    all_df.reset_index(drop=True,inplace=True) #as index numbers are weird
+    return all_df
 
 
-
-##### Data Transformation
+##### Transform the validated data into Time Series data
 
 def handle_missing_indexes_ts(df):
     
@@ -122,45 +130,51 @@ def handle_missing_indexes_ts(df):
     return final_df
 
 
-def transform_to_timeseries(validated_files):
+def transform_to_timeseries():
+    
+    validated_files = [f for f in os.listdir(VALIDATED_PATH) if 'parquet' in f]
+    validated_files.sort()
+    
+    df = []
+    
     for f in validated_files:
         f_path = VALIDATED_PATH + f
-        df = pd.read_parquet(path = f_path)
-        #print(df.shape)
-
-        df = handle_missing_indexes_ts(df)
-        #print("After :",df.shape)
-        
-        #Save each DF as transformed datafile back to disk
-        trans_path = TRANSFORMED_PATH + f
-        df.to_parquet(path=trans_path) #compression='snappy', index=None
-        
+        one_df = pd.read_parquet(path = f_path)
+        df.append(one_df)
+    
+    df = pd.concat(df)
+    df.reset_index(drop=True,inplace=True) #as index numbers are weird
+    #print(df.shape)
+    
+    df = handle_missing_indexes_ts(df)
+    
+    trans_path = TRANSFORMED_PATH + "rides.parquet"
+    df.to_parquet(path=trans_path) #compression='snappy', index=None
+    
     #Delete validated files
     for f in validated_files:
         os.remove(VALIDATED_PATH + '/' + f)
 
-        
+    return df
+ 
+##### Transform Time Series data into Training Data (Features, Target)
+    
+def transform_timeseriesdata_into_features_target(window_size,step_size):
+    
+    transformed_file = [f for f in os.listdir(TRANSFORMED_PATH) if 'parquet' in f][0]
+    transformed_file
 
-##### Data Visualization        
-        
-def visualize_ts_data(df,pickup_loc_id):
-    visual_df = df[df.pickup_location == pickup_loc_id]
-    fig = px.line(visual_df,x='pickup_time',y='count_pickup_loc')
-    fig.show()
-    
-
-    
-##### Preparing features and targets
-    
-def transform_timeseriesdata_into_features_target(df,window_size,step_size):
-    
     features = []
     target = []
     col_names = [f'rides_previous_{el}_hours' for el in range(window_size,0,-1)]
     
+    
+    f_path = TRANSFORMED_PATH + transformed_file
+    df = pd.read_parquet(path = f_path)
+    
     all_loc = df.pickup_location.unique()
     all_loc.sort()
-
+    
     for loc_id in all_loc:
         df_single_loc = df[df.pickup_location == loc_id]
         df_single_loc = df_single_loc[['pickup_time','count_pickup_loc']]
@@ -186,13 +200,26 @@ def transform_timeseriesdata_into_features_target(df,window_size,step_size):
 
         features.append(features_single_loc)
         target.append(target_single_loc)
-
+        
     features = pd.concat(features)
     features.reset_index(drop=True,inplace=True) #as index numbers are weird
 
     target = pd.concat(target)
     target.reset_index(drop=True,inplace=True) #as index numbers are weird
     
+    # Save features and target data back to disk
+    f_path = TRANSFORMED_PATH + "features.parquet"
+    features.to_parquet(path=f_path) #compression='snappy', index=None
+    t_path = TRANSFORMED_PATH + "target.parquet"
+    target.to_parquet(path=t_path) #compression='snappy', index=None
+    
+    #Delete transformed file
+    os.remove(TRANSFORMED_PATH + transformed_file)
+        
     return features,target
+
+
+
+##### Data Visualization
 
 
