@@ -41,6 +41,37 @@ def download_files_raw(year):
         return "Website not found"
     
 
+def download_files_raw_monthly(year,month):
+    
+    resp_url = requests.get(url)
+    if resp_url.status_code == 200 :
+        soup = BeautifulSoup(resp_url.text,"html.parser")
+        yellow_a_tags = soup.find_all(title="Yellow Taxi Trip Records",href=re.compile(str(year)))
+        files = []
+        for link in yellow_a_tags:
+            yellow_href = link.get('href')
+            #Getting an extra %20 at the end of file name due to space in the original a tag on the website
+            yellow_href = yellow_href.strip()
+            resp_file = requests.get(yellow_href)
+            file_name = resp_file.url.split('/')[4]
+            file_name = file_name.replace('yellow_tripdata','rides')
+            os.chdir(RAW_PATH)
+            
+            y,m = file_name.split("_")[1].split("-")
+            m = int(m.split(".")[0])
+            y = int(y)
+    
+            if(year==y and month==m):
+                with open(file_name,'wb') as f:
+                    files.append(file_name)
+                    f.write(resp_file.content)
+                break
+
+        print("Downloaded files : ",files)
+        
+    else :
+        return "Website not found"
+
     
 ##### Validate the raw data
 
@@ -157,7 +188,7 @@ def transform_to_timeseries():
 
     return df
  
-##### Transform Time Series data into Training Data (Features, Target)
+##### Transform Time Series data into Tabular Data (Features, Target)
     
 def transform_timeseriesdata_into_features_target(window_size,step_size):
     
@@ -218,8 +249,5 @@ def transform_timeseriesdata_into_features_target(window_size,step_size):
         
     return features,target
 
-
-
-##### Data Visualization
 
 
