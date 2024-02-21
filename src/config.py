@@ -9,3 +9,6 @@ HOPSWORKS_API_KEY = os.environ['HOPSWORKS_API_KEY']
 
 FEATURE_GROUP_NAME = 'taxi_time_series_hourly'
 FEATURE_GROUP_VERSION = 1
+
+FEATURE_VIEW_NAME = 'taxi_time_series_hourly_feature_view'
+FEATURE_VIEW_VERSION = 1
