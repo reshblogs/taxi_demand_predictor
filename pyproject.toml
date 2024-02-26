@@ -29,6 +29,7 @@ geopandas = "^0.14.3"
 folium = "^0.15.1"
 mapclassify = "^2.6.1"
 streamlit-folium = "^0.18.0"
+pytz = "^2024.1"
 
 
 [build-system]

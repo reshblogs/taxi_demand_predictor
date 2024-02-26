@@ -1,5 +1,6 @@
 import streamlit as st
 from datetime import datetime,timedelta
+from pytz import timezone
 import geopandas as gpd
 import folium
 from streamlit_folium import folium_static
@@ -37,6 +38,14 @@ t = time_nyc.strftime("%d/%m/%y %H:%M") + " ET"
 st.caption(f"New York City, USA  -  :blue[{t}]")
 
 
+###### Delete existing files
+
+df_files = "features.parquet","target.parquet","rides.parquet"
+for f in df_files:
+    f_path = TRANSFORMED_PATH+f
+    if os.path.exists(f_path):
+      os.remove(f_path)
+        
 ###### Predictions
 
 #Connecting to Hopsworks
@@ -62,7 +71,7 @@ print("Features : ",features.shape,"Target : ",target.shape)
 
 X_test = features
 y_test = target
-X_test['pickup_hour'] = pd.to_datetime(X_test['pickup_hour']).dt.tz_convert(None)
+X_test['pickup_hour'] = pd.to_datetime(X_test['pickup_hour']).dt.tz_convert(timezone('US/Eastern'))
 
 df_test = X_test
 df_test['target_rides_next_hour'] = y_test
