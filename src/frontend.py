@@ -3,7 +3,7 @@ from datetime import datetime,timedelta
 from pytz import timezone
 import geopandas as gpd
 import folium
-from streamlit_folium import folium_static
+from streamlit_folium import st_folium #folium_static
 import hopsworks
 import joblib
 from pathlib import Path
@@ -137,7 +137,8 @@ for key in c._children:
 #folium.GeoJson(result_df,tooltip=tooltip).add_to(m)
 
 with st1:
-    folium_static(m,width=500,height=300)
+    #folium_static(m,width=500,height=300)
+    st_folium(m,width=500,height=300,returned_objects=[])
 
 st2.write("Top 5 locations in NYC with the highest demand")
 st2.dataframe(top5_pred,hide_index=True)
