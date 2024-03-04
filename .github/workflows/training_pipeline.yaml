@@ -29,4 +29,4 @@ jobs:
             - name: Execute Python workflows from bash script
               env:
                   HOPSWORKS_API_KEY: ${{ secrets.HOPSWORKS_API_KEY }}
-              run: poetry run jupyter nbconvert --to notebook --execute notebooks/10_model_training_pipeline.ipynb
+              run: poetry run jupyter nbconvert --to notebook --execute notebooks/11_model_training_pipeline.ipynb
